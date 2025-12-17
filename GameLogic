@@ -1,0 +1,27 @@
+public class GameLogic {
+
+  public static final String SASSO = "sasso";
+  public static final String CARTA = "carta";
+  public static final String FORBICE = "forbice";
+  
+    public static boolean isValid(String m) {
+      if (m == null) return false;
+         m = m.toLowerCase();
+            return m.equals(SASSO) || m.equals(CARTA) || m.equals(FORBICE);
+    }
+
+    public static int winner(String p1, String p2) {
+          if (p1.equals(p2)) return 0;
+
+          if (p1.equals(SASSO) && p2.equals(FORBICE)) return 1;
+          if (p1.equals(FORBICE) && p2.equals(CARTA)) return 1;
+          if (p1.equals(CARTA) && p2.equals(SASSO)) return 1;
+
+          return 2;
+  
+      }
+  
+  }
+  
+  
+  
