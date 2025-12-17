@@ -1,0 +1,59 @@
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.border.*;
+
+public class UIStyle {
+    // Tavolozza Colori Dark Mode
+    public static Color BG = new Color(30, 33, 36);      // Sfondo principale
+    public static Color PANEL = new Color(42, 45, 49);   // Sfondo schede
+    public static Color ACCENT = new Color(114, 137, 218); // Colore Blurple (tipo Discord)
+    public static Color TEXT = new Color(255, 255, 255);
+    public static Color TEXT_SECONDARY = new Color(185, 187, 190);
+
+    	
+    public static Color SCORE_BG = new Color(20, 20, 20); // Nero tabellone
+    public static Color HOME_COLOR = new Color(46, 204, 113); // Verde Server
+    public static Color AWAY_COLOR = new Color(52, 152, 219); // Blu/Ciano Client
+    public static Font SCORE_FONT = new Font("Monospaced", Font.BOLD, 48); // Numeri grandi
+    
+    public static Font TITLE = new Font("Segoe UI", Font.BOLD, 28);
+    public static Font NORMAL = new Font("Segoe UI", Font.PLAIN, 16);
+    public static Font BUTTON = new Font("Segoe UI", Font.BOLD, 18);
+
+    public static JButton createButton(String text) {
+        JButton b = new JButton(text.toUpperCase());
+        b.setFont(BUTTON);
+        b.setForeground(Color.WHITE);
+        b.setBackground(ACCENT);
+        b.setFocusPainted(false);
+        b.setContentAreaFilled(true);
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Bordi arrotondati e padding
+        b.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(ACCENT, 1, true),
+            BorderFactory.createEmptyBorder(15, 25, 15, 25)
+        ));
+
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                b.setBackground(ACCENT.brighter());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                b.setBackground(ACCENT);
+            }
+        });
+        return b;
+    }
+
+    public static JPanel createCardPanel() {
+        JPanel p = new JPanel();
+        p.setBackground(PANEL);
+        // Bordo morbido e ombra simulata
+        p.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(new Color(60, 60, 60), 1, true),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        return p;
+    }
+}
