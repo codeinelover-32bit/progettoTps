@@ -4,135 +4,143 @@ import java.io.*;
 import java.net.*;
 
 public class GiocoClient extends JFrame {
-    private PrintWriter out;
-    private JLabel stato = new JLabel("CONNETTENDO...");
-    private JLabel timerLabel = new JLabel("Timer: --");
-    private JLabel scoreLabel = new JLabel("0 - 0");
-    private JLabel mossaServerLabel = new JLabel("-");
-    private JLabel mossaClientLabel = new JLabel("-");
-    private JButton[] bottoni = new JButton[3];
-    private Timer timer;
-    private boolean faseAttesa = true; // blocco logico
 
-    public GiocoClient() {
-        super("Mortal Morra - CLIENT");
-        getContentPane().setBackground(UIStyle.BG);
-        setLayout(new BorderLayout(20, 20));
+private PrintWriter out;
+private JLabel stato = new JLabel("CONNETTENDO...");
+private JLabel scoreLabel = new JLabel("0 - 0");
+private JLabel mossaServerLabel = new JLabel("-");
+private JLabel mossaClientLabel = new JLabel("-");
+private JLabel timerLabel = new JLabel("Timer: --");
+private JButton[] bottoni = new JButton[3];
+private boolean turnoClient = false;
+private Timer timer;
 
-        JPanel scoreboard = new JPanel(new GridBagLayout());
-        scoreboard.setBackground(UIStyle.SCORE_BG);
-        scoreboard.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
-        GridBagConstraints gbc = new GridBagConstraints(); gbc.insets = new Insets(10, 20, 10, 20);
-        JLabel homeTag = new JLabel("SERVER"); homeTag.setForeground(UIStyle.HOME_COLOR); homeTag.setFont(UIStyle.NORMAL);
-        JLabel awayTag = new JLabel("CLIENT"); awayTag.setForeground(UIStyle.AWAY_COLOR); awayTag.setFont(UIStyle.NORMAL);
-        scoreLabel.setFont(UIStyle.SCORE_FONT); scoreLabel.setForeground(Color.YELLOW);
-        gbc.gridx = 0; gbc.gridy = 0; scoreboard.add(homeTag, gbc);
-        gbc.gridx = 1; gbc.gridy = 0; scoreboard.add(scoreLabel, gbc);
-        gbc.gridx = 2; gbc.gridy = 0; scoreboard.add(awayTag, gbc);
-        gbc.gridy = 1; gbc.gridx = 0; scoreboard.add(mossaServerLabel, gbc);
-        gbc.gridx = 2; scoreboard.add(mossaClientLabel, gbc);
+public GiocoClient() {
+super("Sasso-Carta-Forbice - CLIENT");
+setLayout(new BorderLayout(20, 20));
+getContentPane().setBackground(UIStyle.BG);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setOpaque(false);
-        stato.setHorizontalAlignment(SwingConstants.CENTER); stato.setFont(UIStyle.TITLE); stato.setForeground(UIStyle.TEXT);
+// Pannello punteggio
+JPanel scoreboard = new JPanel();
+scoreboard.setBackground(UIStyle.SCORE_BG);
+scoreboard.add(new JLabel("SERVER"));
+scoreboard.add(scoreLabel);
+scoreboard.add(new JLabel("CLIENT"));
+scoreboard.add(mossaServerLabel);
+scoreboard.add(mossaClientLabel);
+scoreboard.add(timerLabel);
+add(scoreboard, BorderLayout.NORTH);
 
-        JPanel card = UIStyle.createCardPanel();
-        card.setLayout(new GridLayout(1, 3, 15, 0));
-        String[] mosse = {"Sasso", "Carta", "Forbice"};
-        for (int i = 0; i < 3; i++) {
-            bottoni[i] = UIStyle.createButton(mosse[i]);
-            bottoni[i].setEnabled(false);
-            bottoni[i].addActionListener(e -> {
-                // BLOCCO IMMEDIATO: solo la prima scelta passa
-                if (!faseAttesa) {
-                    faseAttesa = true; // blocca subito
-                    for (JButton b : bottoni) b.setEnabled(false); // disabilita subito
+// Pannello mosse
+JPanel card = UIStyle.createCardPanel();
+card.setLayout(new GridLayout(1, 3, 15, 0));
+String[] mosse = {"Sasso", "Carta", "Forbice"};
 
-                    String m = e.getActionCommand().toLowerCase();
-                    mossaClientLabel.setText(m.toUpperCase());
-                    stato.setText("IN ATTESA DEL SERVER...");
-                    stopTimer();
+for (int i = 0; i < 3; i++) {
+JButton b = UIStyle.createButton(mosse[i]);
+b.setEnabled(false);
+final int index = i;
+b.addActionListener(e -> {
+if (turnoClient) {
+String scelta = mosse[index].toLowerCase();
+mossaClientLabel.setText(scelta.toUpperCase());
+setButtonsEnabled(false);
+turnoClient = false;
+stopTimer();
+out.println(scelta);
+}
+});
+bottoni[i] = b;
+card.add(b);
+}
 
-                    new Thread(() -> { if (out != null) out.println(m); }).start();
-                }
-            });
-            card.add(bottoni[i]);
-        }
+add(card, BorderLayout.CENTER);
 
-        mainPanel.add(stato, BorderLayout.NORTH); 
-        mainPanel.add(card, BorderLayout.CENTER);
-        timerLabel.setHorizontalAlignment(SwingConstants.CENTER); 
-        timerLabel.setFont(new Font("Monospaced", Font.BOLD, 24));
-        mainPanel.add(timerLabel, BorderLayout.SOUTH);
-        add(scoreboard, BorderLayout.NORTH); 
-        add(mainPanel, BorderLayout.CENTER);
-        setSize(800, 500); 
-        setLocationRelativeTo(null); 
-        setDefaultCloseOperation(EXIT_ON_CLOSE); 
-        setVisible(true);
-        new Thread(this::startClient).start();
-    }
+stato.setHorizontalAlignment(SwingConstants.CENTER);
+stato.setForeground(UIStyle.TEXT);
+add(stato, BorderLayout.SOUTH);
 
-    private void startClient() {
-        try (Socket socket = new Socket("127.0.0.1", 5000);
-             PrintWriter outS = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-            out = outS;
-            while (true) {
-                String cmd = in.readLine();
-                if (cmd == null) break;
-                if (cmd.equals("INSERISCI_MOSSA")) {
-                    faseAttesa = false; // sblocco solo qui
-                    SwingUtilities.invokeLater(() -> {
-                        for (JButton b : bottoni) b.setEnabled(true);
-                        stato.setText("TOCCA A TE!");
-                        mossaServerLabel.setText("-"); 
-                        mossaClientLabel.setText("-");
-                    });
-                    startTimer();
-                } else if (cmd.startsWith("RISULTATO:")) {
-                    String punt = in.readLine();
-                    mostraEsito(cmd, punt);
-                }
-            }
-        } catch (Exception e) { stato.setText("OFFLINE"); }
-    }
+setSize(800, 500);
+setLocationRelativeTo(null);
+setDefaultCloseOperation(EXIT_ON_CLOSE);
+setVisible(true);
 
-    private void mostraEsito(String r, String p) {
-        stopTimer();
-        String[] res = r.substring(10).split(";");
-        String[] pts = p.substring(10).split(";");
-        int v = Integer.parseInt(res[2]);
-        String msg = (v == 2) ? "HAI VINTO!" : (v == 1) ? "HAI PERSO..." : "PAREGGIO!";
-        SwingUtilities.invokeLater(() -> {
-            mossaServerLabel.setText(res[0].toUpperCase());
-            mossaClientLabel.setText(res[1].toUpperCase());
-            scoreLabel.setText(pts[0] + " - " + pts[1]);
-            stato.setText(msg);
-            for (JButton b : bottoni) b.setEnabled(false);
-            faseAttesa = true; // mantiene il blocco
-        });
-    }
+new Thread(this::startClient).start();
+}
 
-    private void startTimer() {
-        if (timer != null) timer.stop();
-        timer = new Timer(1000, e -> {
-            int t = Integer.parseInt(timerLabel.getText().replaceAll("\\D", "")) - 1;
-            timerLabel.setText("Timer: " + t);
-            if (t <= 0) { 
-                stopTimer(); 
-                if (!faseAttesa) {
-                    faseAttesa = true;
-                    for (JButton b : bottoni) b.setEnabled(false);
-                    stato.setText("IN ATTESA DEL SERVER..."); 
-                    new Thread(() -> { if (out != null) out.println("timeout"); }).start();
-                }
-            }
-        });
-        timerLabel.setText("Timer: 10"); 
-        timer.start();
-    }
+private void startClient() {
+try (Socket socket = new Socket("127.0.0.1", 5000);
+PrintWriter outS = new PrintWriter(socket.getOutputStream(), true);
+BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-    private void stopTimer() { if (timer != null) timer.stop(); timerLabel.setText("Timer: --"); }
-    public static void main(String[] args) { new GiocoClient(); }
+out = outS;
+
+while (true) {
+String cmd = in.readLine();
+if (cmd == null) break;
+
+if (cmd.equals("INSERISCI_MOSSA")) {
+turnoClient = true;
+SwingUtilities.invokeLater(() -> {
+stato.setText("TOCCA A TE!");
+stato.setForeground(UIStyle.AWAY_COLOR);
+setButtonsEnabled(true);
+mossaServerLabel.setText("-");
+mossaClientLabel.setText("-");
+});
+startTimer(10);
+} else if (cmd.startsWith("RISULTATO:")) {
+String[] dati = cmd.substring(10).split(";");
+int res = Integer.parseInt(dati[2]);
+String msg = (res == 0) ? "PAREGGIO!" : (res == 1) ? "SERVER VINCE!" : "CLIENT VINCE!";
+SwingUtilities.invokeLater(() -> {
+mossaServerLabel.setText(dati[0].toUpperCase());
+mossaClientLabel.setText(dati[1].toUpperCase());
+stato.setText(msg);
+});
+scoreLabel.setText(in.readLine().substring(9).replace(";", " - "));
+}
+}
+
+} catch (Exception e) {
+SwingUtilities.invokeLater(() -> stato.setText("OFFLINE"));
+}
+}
+
+private void startTimer(int secondi) {
+stopTimer();
+final int[] tempoRimanente = {secondi};
+timerLabel.setText("Timer: " + tempoRimanente[0]);
+timer = new Timer(1000, e -> {
+tempoRimanente[0]--;
+timerLabel.setText("Timer: " + tempoRimanente[0]);
+if (tempoRimanente[0] <= 0) {
+stopTimer();
+if (turnoClient) {
+turnoClient = false;
+setButtonsEnabled(false);
+out.println("timeout");
+}
+}
+});
+timer.start();
+}
+
+private void stopTimer() {
+if (timer != null) timer.stop();
+timerLabel.setText("Timer: --");
+}
+
+private void setButtonsEnabled(boolean en) {
+SwingUtilities.invokeLater(() -> {
+for (JButton b : bottoni) {
+b.setEnabled(en);
+b.setBackground(en ? UIStyle.ACCENT : Color.DARK_GRAY);
+}
+});
+}
+
+public static void main(String[] args) {
+new GiocoClient();
+}
 }
