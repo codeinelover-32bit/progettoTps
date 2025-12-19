@@ -3,57 +3,66 @@ import javax.swing.*;
 import javax.swing.border.*;
 
 public class UIStyle {
-    // Tavolozza Colori Dark Mode
-    public static Color BG = new Color(30, 33, 36);      // Sfondo principale
-    public static Color PANEL = new Color(42, 45, 49);   // Sfondo schede
-    public static Color ACCENT = new Color(114, 137, 218); // Colore Blurple (tipo Discord)
-    public static Color TEXT = new Color(255, 255, 255);
-    public static Color TEXT_SECONDARY = new Color(185, 187, 190);
 
-    	
-    public static Color SCORE_BG = new Color(20, 20, 20); // Nero tabellone
-    public static Color HOME_COLOR = new Color(46, 204, 113); // Verde Server
-    public static Color AWAY_COLOR = new Color(52, 152, 219); // Blu/Ciano Client
-    public static Font SCORE_FONT = new Font("Monospaced", Font.BOLD, 48); // Numeri grandi
-    
-    public static Font TITLE = new Font("Segoe UI", Font.BOLD, 28);
-    public static Font NORMAL = new Font("Segoe UI", Font.PLAIN, 16);
-    public static Font BUTTON = new Font("Segoe UI", Font.BOLD, 18);
+// Tavolozza Dark Mode
+public static final Color BG = new Color(30, 33, 36);
+public static final Color PANEL = new Color(42, 45, 49);
+public static final Color ACCENT = new Color(114, 137, 218);
+public static final Color TEXT = new Color(255, 255, 255);
+public static final Color TEXT_SECONDARY = new Color(185, 187, 190);
 
-    public static JButton createButton(String text) {
-        JButton b = new JButton(text.toUpperCase());
-        b.setFont(BUTTON);
-        b.setForeground(Color.WHITE);
-        b.setBackground(ACCENT);
-        b.setFocusPainted(false);
-        b.setContentAreaFilled(true);
-        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        // Bordi arrotondati e padding
-        b.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(ACCENT, 1, true),
-            BorderFactory.createEmptyBorder(15, 25, 15, 25)
-        ));
+public static final Color SCORE_BG = new Color(20, 20, 20);
+public static final Color HOME_COLOR = new Color(46, 204, 113);
+public static final Color AWAY_COLOR = new Color(52, 152, 219);
 
-        b.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                b.setBackground(ACCENT.brighter());
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                b.setBackground(ACCENT);
-            }
-        });
-        return b;
-    }
+// Font
+public static final Font SCORE_FONT = new Font("Monospaced", Font.BOLD, 48);
+public static final Font TITLE = new Font("Segoe UI", Font.BOLD, 28);
+public static final Font NORMAL = new Font("Segoe UI", Font.PLAIN, 16);
+public static final Font BUTTON = new Font("Segoe UI", Font.BOLD, 18);
 
-    public static JPanel createCardPanel() {
-        JPanel p = new JPanel();
-        p.setBackground(PANEL);
-        // Bordo morbido e ombra simulata
-        p.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(new Color(60, 60, 60), 1, true),
-            BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
-        return p;
-    }
+// Crea un pulsante con stile uniforme
+public static JButton createButton(String text) {
+JButton button = new JButton(text.toUpperCase());
+button.setFont(BUTTON);
+button.setForeground(Color.WHITE);
+button.setBackground(ACCENT);
+button.setFocusPainted(false);
+button.setContentAreaFilled(true);
+button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+// Bordo arrotondato con padding
+button.setBorder(BorderFactory.createCompoundBorder(
+new LineBorder(ACCENT, 1, true),
+BorderFactory.createEmptyBorder(15, 25, 15, 25)
+));
+
+// Effetto hover
+button.addMouseListener(new java.awt.event.MouseAdapter() {
+@Override
+public void mouseEntered(java.awt.event.MouseEvent e) {
+button.setBackground(ACCENT.brighter());
+}
+
+@Override
+public void mouseExited(java.awt.event.MouseEvent e) {
+button.setBackground(ACCENT);
+}
+});
+
+return button;
+}
+
+// Crea un pannello "card" con bordo morbido
+public static JPanel createCardPanel() {
+JPanel panel = new JPanel();
+panel.setBackground(PANEL);
+
+panel.setBorder(BorderFactory.createCompoundBorder(
+new LineBorder(new Color(60, 60, 60), 1, true),
+BorderFactory.createEmptyBorder(20, 20, 20, 20)
+));
+
+return panel;
+}
 }
