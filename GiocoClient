@@ -1,3 +1,5 @@
+package tps;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
@@ -6,34 +8,60 @@ import java.net.*;
 public class GiocoClient extends JFrame {
 
     private PrintWriter out;
-    private JLabel stato = new JLabel("CONNETTENDO...");
+    private JLabel stato = new JLabel("CONNETTENDO AL SERVER...");
     private JLabel scoreLabel = new JLabel("0 - 0");
     private JLabel mossaServerLabel = new JLabel("-");
     private JLabel mossaClientLabel = new JLabel("-");
-    private JLabel timerLabel = new JLabel("Timer: --");
+    private JLabel timerLabel = new JLabel("00");
     private JButton[] bottoni = new JButton[3];
     private boolean turnoClient = false;
     private Timer timer;
 
     public GiocoClient() {
-        super("Sasso-Carta-Forbice - CLIENT");
-        setLayout(new BorderLayout(20, 20));
-        getContentPane().setBackground(UIStyle.BG);
+        super("Sasso-Carta-Forbice - CLIENT (Stadio)");
+        getContentPane().setBackground(UIStyle.FIELD_GREEN);
+        setLayout(new BorderLayout(15, 15));
 
-        // Pannello punteggio
-        JPanel scoreboard = new JPanel();
-        scoreboard.setBackground(UIStyle.SCORE_BG);
-        scoreboard.add(new JLabel("SERVER"));
+        // HEADER
+        JPanel scoreboard = UIStyle.createScorePanel();
+        scoreboard.setLayout(new GridLayout(2, 3, 20, 10));
+
+        JLabel lblServer = new JLabel("SERVER", SwingConstants.CENTER);
+        lblServer.setForeground(UIStyle.HOME_COLOR);
+        lblServer.setFont(UIStyle.TITLE);
+
+        JLabel lblClient = new JLabel("CLIENT", SwingConstants.CENTER);
+        lblClient.setForeground(UIStyle.AWAY_COLOR);
+        lblClient.setFont(UIStyle.TITLE);
+
+        scoreLabel.setFont(UIStyle.SCORE_FONT);
+        scoreLabel.setForeground(UIStyle.TEXT);
+        scoreLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        mossaServerLabel.setFont(UIStyle.NORMAL);
+        mossaServerLabel.setForeground(UIStyle.TEXT);
+        mossaServerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        mossaClientLabel.setFont(UIStyle.NORMAL);
+        mossaClientLabel.setForeground(UIStyle.TEXT);
+        mossaClientLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        timerLabel.setFont(UIStyle.TITLE);
+        timerLabel.setForeground(Color.ORANGE);
+        timerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        scoreboard.add(lblServer);
         scoreboard.add(scoreLabel);
-        scoreboard.add(new JLabel("CLIENT"));
+        scoreboard.add(lblClient);
         scoreboard.add(mossaServerLabel);
-        scoreboard.add(mossaClientLabel);
         scoreboard.add(timerLabel);
+        scoreboard.add(mossaClientLabel);
+
         add(scoreboard, BorderLayout.NORTH);
 
-        // Pannello mosse
-        JPanel card = UIStyle.createCardPanel();
-        card.setLayout(new GridLayout(1, 3, 15, 0));
+        // CAMPO
+        JPanel field = UIStyle.createFieldPanel();
+        field.setLayout(new GridLayout(1, 3, 40, 0));
         String[] mosse = {"Sasso", "Carta", "Forbice"};
 
         for (int i = 0; i < 3; i++) {
@@ -48,31 +76,45 @@ public class GiocoClient extends JFrame {
                     turnoClient = false;
                     stopTimer();
                     out.println(scelta);
-
-                    // Logica locale per conformità
-                    String serverMove = mossaServerLabel.getText().toLowerCase();
-                    if (GameLogic.isValid(serverMove)) {
-                        int risultatoLocale = GameLogic.winner(serverMove, scelta);
-                        System.out.println("Risultato calcolato localmente: " + risultatoLocale);
-                    }
                 }
             });
             bottoni[i] = b;
-            card.add(b);
+            field.add(b);
         }
 
-        add(card, BorderLayout.CENTER);
+        add(field, BorderLayout.CENTER);
 
+        // FOOTER
         stato.setHorizontalAlignment(SwingConstants.CENTER);
+        stato.setFont(UIStyle.TITLE);
         stato.setForeground(UIStyle.TEXT);
-        add(stato, BorderLayout.SOUTH);
 
-        setSize(800, 500);
+        JPanel footer = UIStyle.createFooterPanel();
+        footer.setLayout(new BorderLayout());
+        footer.add(stato, BorderLayout.CENTER);
+
+        add(footer, BorderLayout.SOUTH);
+
+        setSize(900, 550);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
 
         new Thread(this::startClient).start();
+    }
+
+    // ⭐ EFFETTO GOAL (LAMPEGGIO)
+    private void goalAnimation(JLabel label) {
+        new Thread(() -> {
+            try {
+                for (int i = 0; i < 4; i++) {
+                    label.setForeground(Color.YELLOW);
+                    Thread.sleep(150);
+                    label.setForeground(UIStyle.TEXT);
+                    Thread.sleep(150);
+                }
+            } catch (Exception ignored) {}
+        }).start();
     }
 
     private void startClient() {
@@ -84,6 +126,11 @@ public class GiocoClient extends JFrame {
             out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
+            SwingUtilities.invokeLater(() -> {
+                stato.setText("CONNESSO! IN ATTESA DEL FISCHIO...");
+                stato.setForeground(UIStyle.AWAY_COLOR);
+            });
+
             while (true) {
                 String cmd = in.readLine();
                 if (cmd == null) break;
@@ -91,35 +138,68 @@ public class GiocoClient extends JFrame {
                 if (cmd.equals("INSERISCI_MOSSA")) {
                     turnoClient = true;
                     SwingUtilities.invokeLater(() -> {
-                        stato.setText("TOCCA A TE!");
+                        stato.setText("TOCCA A TE! SCEGLI LA MOSSA!");
                         stato.setForeground(UIStyle.AWAY_COLOR);
                         setButtonsEnabled(true);
                         mossaServerLabel.setText("-");
                         mossaClientLabel.setText("-");
+                        mossaServerLabel.setForeground(UIStyle.TEXT);
+                        mossaClientLabel.setForeground(UIStyle.TEXT);
                     });
                     startTimer(10);
-                } else if (cmd.startsWith("RISULTATO:")) {
-                    String[] dati = cmd.substring(10).split(";");
-                    int res = Integer.parseInt(dati[2]);
-                    String msg = (res == 0) ? "PAREGGIO!" : (res == 1) ? "SERVER VINCE!" : "CLIENT VINCE!";
+
+                } else if (cmd.startsWith("RISULTATO:TIMEOUT")) {
                     SwingUtilities.invokeLater(() -> {
-                        mossaServerLabel.setText(dati[0].toUpperCase());
-                        mossaClientLabel.setText(dati[1].toUpperCase());
-                        stato.setText(msg);
+                        stato.setText("TIMEOUT! SERVER SEGNA.");
+                        stato.setForeground(Color.RED);
                     });
 
-                    // Aggiorna punteggio
+                } else if (cmd.startsWith("RISULTATO:")) {
+                    String[] dati = cmd.substring(10).split(";");
+                    String mossaSrv = dati[0];
+                    String mossaCli = dati[1];
+                    int res = Integer.parseInt(dati[2]);
+
+                    String msg = switch (res) {
+                        case 0 -> "PAREGGIO! NESSUN GOL.";
+                        case 1 -> "SERVER SEGNA!";
+                        case 2 -> "CLIENT SEGNA! GOL!";
+                        default -> "";
+                    };
+
+                    SwingUtilities.invokeLater(() -> {
+                        mossaServerLabel.setText(mossaSrv.toUpperCase());
+                        mossaClientLabel.setText(mossaCli.toUpperCase());
+                        stato.setText(msg);
+
+                        // ⭐ COLORI + LAMPEGGIO
+                        if (res == 1) {
+                            mossaServerLabel.setForeground(Color.GREEN);
+                            mossaClientLabel.setForeground(Color.RED);
+                            goalAnimation(scoreLabel);
+                        } else if (res == 2) {
+                            mossaServerLabel.setForeground(Color.RED);
+                            mossaClientLabel.setForeground(Color.GREEN);
+                            goalAnimation(scoreLabel);
+                        } else {
+                            mossaServerLabel.setForeground(Color.YELLOW);
+                            mossaClientLabel.setForeground(Color.YELLOW);
+                        }
+                    });
+
                     String punteggio = in.readLine();
                     if (punteggio != null && punteggio.startsWith("PUNTEGGIO:")) {
-                        scoreLabel.setText(punteggio.substring(10).replace(";", " - "));
+                        String s = punteggio.substring(10).replace(";", " - ");
+                        SwingUtilities.invokeLater(() -> scoreLabel.setText(s));
                     }
-                } else if (cmd.startsWith("RISULTATO:TIMEOUT")) {
-                    SwingUtilities.invokeLater(() -> stato.setText("TIMEOUT! SERVER VINCE"));
                 }
             }
 
         } catch (Exception e) {
-            SwingUtilities.invokeLater(() -> stato.setText("OFFLINE"));
+            SwingUtilities.invokeLater(() -> {
+                stato.setText("OFFLINE. IMPOSSIBILE COLLEGARSI.");
+                stato.setForeground(Color.RED);
+            });
             e.printStackTrace();
         }
     }
@@ -127,10 +207,10 @@ public class GiocoClient extends JFrame {
     private void startTimer(int secondi) {
         stopTimer();
         final int[] tempoRimanente = {secondi};
-        timerLabel.setText("Timer: " + tempoRimanente[0]);
+        timerLabel.setText(String.valueOf(tempoRimanente[0]));
         timer = new Timer(1000, e -> {
             tempoRimanente[0]--;
-            timerLabel.setText("Timer: " + tempoRimanente[0]);
+            timerLabel.setText(String.valueOf(tempoRimanente[0]));
             if (tempoRimanente[0] <= 0) {
                 stopTimer();
                 if (turnoClient) {
@@ -145,7 +225,7 @@ public class GiocoClient extends JFrame {
 
     private void stopTimer() {
         if (timer != null) timer.stop();
-        timerLabel.setText("Timer: --");
+        timerLabel.setText("00");
     }
 
     private void setButtonsEnabled(boolean en) {
@@ -158,7 +238,6 @@ public class GiocoClient extends JFrame {
     }
 
     public static void main(String[] args) {
-        new GiocoClient();
+        SwingUtilities.invokeLater(GiocoClient::new);
     }
 }
-
