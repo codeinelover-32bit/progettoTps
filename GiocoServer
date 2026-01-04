@@ -38,7 +38,7 @@ public class GiocoServer extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
 
-        new Thread(this::startServer).start();
+        new Thread(this::InizioServer).start();
     }
 
     // ---------------------------------------------------------
@@ -136,7 +136,7 @@ public class GiocoServer extends JFrame {
     // ---------------------------------------------------------
     // LOGICA SERVER
     // ---------------------------------------------------------
-    private void startServer() {
+    private void InizioServer() {
         try (ServerSocket serverSocket = new ServerSocket(5000)) {
 
             Socket clientSocket = serverSocket.accept();
@@ -157,7 +157,7 @@ public class GiocoServer extends JFrame {
 
                 // --- TURNO CLIENT ---
                 out.println("INSERISCI_MOSSA");
-                startTimer(10);
+                InizioTimer(10);
 
                 String mossaClient = in.readLine();
                 stopTimer();
@@ -207,7 +207,7 @@ public class GiocoServer extends JFrame {
             mossaServerLabel.setForeground(UIStyle.TEXT);
             mossaClientLabel.setForeground(UIStyle.TEXT);
 
-            setButtonsEnabled(true, delta);
+            SetBottoni(true, delta);
         });
     }
 
@@ -244,7 +244,7 @@ public class GiocoServer extends JFrame {
     // ---------------------------------------------------------
     // TIMER
     // ---------------------------------------------------------
-    private void startTimer(int secondi) {
+    private void InizioTimer(int secondi) {
         stopTimer();
         final int[] tempo = {secondi};
 
@@ -257,7 +257,7 @@ public class GiocoServer extends JFrame {
             if (tempo[0] <= 0) {
                 stopTimer();
                 if (mossaServer == null) mossaServer = "timeout";
-                setButtonsEnabled(false, null);
+                SetBottoni(false, null);
             }
         });
 
@@ -272,7 +272,7 @@ public class GiocoServer extends JFrame {
     // ---------------------------------------------------------
     // GESTIONE BOTTONI
     // ---------------------------------------------------------
-    private void setButtonsEnabled(boolean attivi, CountDownLatch latch) {
+    private void SetBottoni(boolean attivi, CountDownLatch latch) {
         SwingUtilities.invokeLater(() -> {
             for (JButton but : bottoni) {
 
@@ -286,7 +286,7 @@ public class GiocoServer extends JFrame {
                 	but.addActionListener(e -> {
                         mossaServer = but.getText().toLowerCase();
                         mossaServerLabel.setText(mossaServer.toUpperCase());
-                        setButtonsEnabled(false, null);
+                        SetBottoni(false, null);
                         latch.countDown();
                     });
                 }
@@ -298,3 +298,4 @@ public class GiocoServer extends JFrame {
         SwingUtilities.invokeLater(GiocoServer::new);
     }
 }
+
