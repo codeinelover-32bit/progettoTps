@@ -17,34 +17,34 @@ public class GiocoClient extends JFrame {
 
     public GiocoClient() {
         super("Sasso-Carta-Forbice - CLIENT (Stadio)");
-        getContentPane().setBackground(UIStyle.FIELD_GREEN);
+        getContentPane().setBackground(StiliPerGioco.CAMPO_VERDE);
         setLayout(new BorderLayout(15, 15));
 
         // HEADER
-        JPanel tabellone = UIStyle.createScorePanel();
+        JPanel tabellone = StiliPerGioco.CreazioneTab();
         tabellone.setLayout(new GridLayout(2, 3, 20, 10));
 
         JLabel LabelServer = new JLabel("SERVER", SwingConstants.CENTER);
-        LabelServer.setForeground(UIStyle.HOME_COLOR);
-        LabelServer.setFont(UIStyle.TITLE);
+        LabelServer.setForeground(StiliPerGioco.COLORE_CASA);
+        LabelServer.setFont(StiliPerGioco.TITOLO);
 
         JLabel LabelClient = new JLabel("CLIENT", SwingConstants.CENTER);
-        LabelClient.setForeground(UIStyle.AWAY_COLOR);
-        LabelClient.setFont(UIStyle.TITLE);
+        LabelClient.setForeground(StiliPerGioco.COLORRE_TRANSF);
+        LabelClient.setFont(StiliPerGioco.TITOLO);
 
-        TabelloneLabel.setFont(UIStyle.SCORE_FONT);
-        TabelloneLabel.setForeground(UIStyle.TEXT);
+        TabelloneLabel.setFont(StiliPerGioco.FONT_TABELLONE);
+        TabelloneLabel.setForeground(StiliPerGioco.TESTO);
         TabelloneLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        mossaServerLabel.setFont(UIStyle.NORMAL);
-        mossaServerLabel.setForeground(UIStyle.TEXT);
+        mossaServerLabel.setFont(StiliPerGioco.NORMALE);
+        mossaServerLabel.setForeground(StiliPerGioco.TESTO);
         mossaServerLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        mossaClientLabel.setFont(UIStyle.NORMAL);
-        mossaClientLabel.setForeground(UIStyle.TEXT);
+        mossaClientLabel.setFont(StiliPerGioco.NORMALE);
+        mossaClientLabel.setForeground(StiliPerGioco.TESTO);
         mossaClientLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        timerLabel.setFont(UIStyle.TITLE);
+        timerLabel.setFont(StiliPerGioco.TITOLO);
         timerLabel.setForeground(Color.ORANGE);
         timerLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -58,12 +58,12 @@ public class GiocoClient extends JFrame {
         add(tabellone, BorderLayout.NORTH);
 
         // CAMPO
-        JPanel campo = UIStyle.createFieldPanel();
+        JPanel campo = StiliPerGioco.CreazioneCampo();
         campo.setLayout(new GridLayout(1, 3, 40, 0));
         String[] mosse = {"Sasso", "Carta", "Forbice"};
 
         for (int i = 0; i < 3; i++) {
-            JButton b = UIStyle.createButton(mosse[i]);
+            JButton b = StiliPerGioco.CreaBot(mosse[i]);
             b.setEnabled(false);
             final int index = i;
             b.addActionListener(e -> {
@@ -84,10 +84,10 @@ public class GiocoClient extends JFrame {
 
         // FOOTER
         stato.setHorizontalAlignment(SwingConstants.CENTER);
-        stato.setFont(UIStyle.TITLE);
-        stato.setForeground(UIStyle.TEXT);
+        stato.setFont(StiliPerGioco.TITOLO);
+        stato.setForeground(StiliPerGioco.TESTO);
 
-        JPanel pan = UIStyle.createFooterPanel();
+        JPanel pan = StiliPerGioco.CreazioneSpeek();
         pan.setLayout(new BorderLayout());
         pan.add(stato, BorderLayout.CENTER);
 
@@ -108,7 +108,7 @@ public class GiocoClient extends JFrame {
                 for (int i = 0; i < 4; i++) {
                     l.setForeground(Color.YELLOW);
                     Thread.sleep(150);
-                    l.setForeground(UIStyle.TEXT);
+                    l.setForeground(StiliPerGioco.TESTO);
                     Thread.sleep(150);
                 }
             } catch (Exception e) {}
@@ -126,7 +126,7 @@ public class GiocoClient extends JFrame {
 
             SwingUtilities.invokeLater(() -> {
                 stato.setText("CONNESSO! IN ATTESA DEL FISCHIO...");
-                stato.setForeground(UIStyle.AWAY_COLOR);
+                stato.setForeground(StiliPerGioco.COLORRE_TRANSF);
             });
 
             while (true) {
@@ -137,12 +137,12 @@ public class GiocoClient extends JFrame {
                     turnoClient = true;
                     SwingUtilities.invokeLater(() -> {
                         stato.setText("TOCCA A TE! SCEGLI LA MOSSA!");
-                        stato.setForeground(UIStyle.AWAY_COLOR);
+                        stato.setForeground(StiliPerGioco.COLORRE_TRANSF);
                         setButtonsEnabled(true);
                         mossaServerLabel.setText("-");
                         mossaClientLabel.setText("-");
-                        mossaServerLabel.setForeground(UIStyle.TEXT);
-                        mossaClientLabel.setForeground(UIStyle.TEXT);
+                        mossaServerLabel.setForeground(StiliPerGioco.TESTO);
+                        mossaClientLabel.setForeground(StiliPerGioco.TESTO);
                     });
                     InizioTimer(10);
 
@@ -237,7 +237,7 @@ public class GiocoClient extends JFrame {
         SwingUtilities.invokeLater(() -> {
             for (JButton b : bottoni) {
                 b.setEnabled(en);
-                b.setBackground(en ? UIStyle.ACCENT : Color.DARK_GRAY);
+                b.setBackground(en ? StiliPerGioco.ORO : Color.DARK_GRAY);
             }
         });
     }
