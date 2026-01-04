@@ -1,68 +1,82 @@
+package tps;
+
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
 public class UIStyle {
 
-// Tavolozza Dark Mode
-public static final Color BG = new Color(30, 33, 36);
-public static final Color PANEL = new Color(42, 45, 49);
-public static final Color ACCENT = new Color(114, 137, 218);
-public static final Color TEXT = new Color(255, 255, 255);
-public static final Color TEXT_SECONDARY = new Color(185, 187, 190);
+    // Palette stile calcio
+    public static final Color FIELD_GREEN = new Color(34, 139, 34);
+    public static final Color DARK_GREEN = new Color(24, 100, 24);
+    public static final Color SCORE_BG = new Color(10, 10, 10);
+    public static final Color TEXT = Color.WHITE;
+    public static final Color ACCENT = new Color(255, 215, 0); // oro
+    public static final Color PANEL = new Color(20, 20, 20);
+    public static final Color HOME_COLOR = new Color(46, 204, 113);
+    public static final Color AWAY_COLOR = new Color(52, 152, 219);
 
-public static final Color SCORE_BG = new Color(20, 20, 20);
-public static final Color HOME_COLOR = new Color(46, 204, 113);
-public static final Color AWAY_COLOR = new Color(52, 152, 219);
+    // Font stile scoreboard
+    public static final Font SCORE_FONT = new Font("Monospaced", Font.BOLD, 60);
+    public static final Font TITLE = new Font("Arial", Font.BOLD, 26);
+    public static final Font NORMAL = new Font("Arial", Font.PLAIN, 18);
+    public static final Font BUTTON = new Font("Arial", Font.BOLD, 20);
 
-// Font
-public static final Font SCORE_FONT = new Font("Monospaced", Font.BOLD, 48);
-public static final Font TITLE = new Font("Segoe UI", Font.BOLD, 28);
-public static final Font NORMAL = new Font("Segoe UI", Font.PLAIN, 16);
-public static final Font BUTTON = new Font("Segoe UI", Font.BOLD, 18);
+    // Pulsanti stile calcio (cartellino)
+    public static JButton createButton(String text) {
+        JButton b = new JButton(text.toUpperCase());
+        b.setFont(BUTTON);
+        b.setForeground(Color.BLACK);
+        b.setBackground(ACCENT);
+        b.setFocusPainted(false);
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        b.setContentAreaFilled(true);
+        b.setOpaque(true);
 
-// Crea un pulsante con stile uniforme
-public static JButton createButton(String text) {
-JButton button = new JButton(text.toUpperCase());
-button.setFont(BUTTON);
-button.setForeground(Color.WHITE);
-button.setBackground(ACCENT);
-button.setFocusPainted(false);
-button.setContentAreaFilled(true);
-button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        b.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(Color.BLACK, 2, true),
+                BorderFactory.createEmptyBorder(15, 25, 15, 25)
+        ));
 
-// Bordo arrotondato con padding
-button.setBorder(BorderFactory.createCompoundBorder(
-new LineBorder(ACCENT, 1, true),
-BorderFactory.createEmptyBorder(15, 25, 15, 25)
-));
+        b.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                b.setBackground(ACCENT.brighter());
+            }
 
-// Effetto hover
-button.addMouseListener(new java.awt.event.MouseAdapter() {
-@Override
-public void mouseEntered(java.awt.event.MouseEvent e) {
-button.setBackground(ACCENT.brighter());
-}
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                b.setBackground(ACCENT);
+            }
+        });
 
-@Override
-public void mouseExited(java.awt.event.MouseEvent e) {
-button.setBackground(ACCENT);
-}
-});
+        return b;
+    }
 
-return button;
-}
+    // Pannello stile “tabellone”
+    public static JPanel createScorePanel() {
+        JPanel p = new JPanel();
+        p.setBackground(SCORE_BG);
+        p.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(Color.WHITE, 3),
+                BorderFactory.createEmptyBorder(15, 20, 15, 20)
+        ));
+        return p;
+    }
 
-// Crea un pannello "card" con bordo morbido
-public static JPanel createCardPanel() {
-JPanel panel = new JPanel();
-panel.setBackground(PANEL);
+    // Pannello centrale stile “campo”
+    public static JPanel createFieldPanel() {
+        JPanel p = new JPanel();
+        p.setBackground(FIELD_GREEN);
+        p.setBorder(new LineBorder(Color.WHITE, 4));
+        return p;
+    }
 
-panel.setBorder(BorderFactory.createCompoundBorder(
-new LineBorder(new Color(60, 60, 60), 1, true),
-BorderFactory.createEmptyBorder(20, 20, 20, 20)
-));
-
-return panel;
-}
+    // Pannello footer (speaker)
+    public static JPanel createFooterPanel() {
+        JPanel p = new JPanel();
+        p.setBackground(DARK_GREEN);
+        p.setBorder(new LineBorder(Color.WHITE, 3));
+        return p;
+    }
 }
