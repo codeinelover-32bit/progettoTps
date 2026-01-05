@@ -1,30 +1,28 @@
-package tps;
-
 public class GameLogic {
 
-public static final String SASSO = "sasso";
-public static final String CARTA = "carta";
-public static final String FORBICE = "forbice";
+	public static final String SASSO = "sasso";
+    public static final String CARTA = "carta";
+    public static final String FORBICE = "forbice";
 
-// Controlla se la mossa è valida
-public static boolean isValid(String m) {
-if (m == null) return false;
-m = m.toLowerCase();
-return m.equals(SASSO) || m.equals(CARTA) || m.equals(FORBICE);
+    //CONTROLLA SE LA MOSSA È VALIDA
+    public static boolean isValid(String m) {
+        if (m == null) return false;      // nessuna mossa
+        m = m.toLowerCase();
+        // Controlla se è una delle tre mosse valide
+        return m.equals(SASSO) || m.equals(CARTA) || m.equals(FORBICE);
+    }
+
+    //CALCOLA IL VINCITORE
+    public static int winner(String p1, String p2) {
+        if (p1.equals(p2)) return 0; // pareggio
+
+        // Regole del gioco
+        if ((p1.equals(SASSO) && p2.equals(FORBICE)) ||
+            (p1.equals(FORBICE) && p2.equals(CARTA)) ||
+            (p1.equals(CARTA) && p2.equals(SASSO))) {
+            return 1; // p1 vince
+        }
+
+        return 2; // altrimenti vince p2
+    }
 }
-
-// Restituisce il vincitore: 0 = pareggio, 1 = p1 vince, 2 = p2 vince
-public static int winner(String p1, String p2) {
-if (p1.equals(p2)) return 0;
-
-// Logica diretta come nell'originale
-if ((p1.equals(SASSO) && p2.equals(FORBICE)) ||
-(p1.equals(FORBICE) && p2.equals(CARTA)) ||
-(p1.equals(CARTA) && p2.equals(SASSO))) {
-return 1;
-}
-
-return 2;
-}
-}
-
