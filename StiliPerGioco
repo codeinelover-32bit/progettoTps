@@ -7,23 +7,23 @@ public class StiliPerGioco {
     public static final Color CAMPO_VERDE = new Color(34, 139, 34);   //campo da gioco
     public static final Color VERDE = new Color(24, 100, 24);         //footer
     public static final Color TABELLONE1 = new Color(10, 10, 10);     //tabellone
-    public static final Color TESTO = Color.WHITE;                     // Colore testo 
+    public static final Color TESTO = Color.WHITE;                     // Colore testo
     public static final Color ORO = new Color(255, 215, 0);            // Colore bottoni "
-    public static final Color PANEL = new Color(20, 20, 20);           // Colore pannello 
+    public static final Color PANEL = new Color(20, 20, 20);           // Colore pannello
     public static final Color COLORE_CASA = new Color(46, 204, 113);   // Colore server
     public static final Color COLORRE_TRANSF = new Color(52, 152, 219);// Colore client
 
-    public static final Font FONT_TABELLONE = new Font("Monospaced", Font.BOLD, 60); 
-    public static final Font TITOLO = new Font("Arial", Font.BOLD, 26);             
-    public static final Font NORMALE = new Font("Arial", Font.PLAIN, 18);           
+    public static final Font FONT_TABELLONE = new Font("Monospaced", Font.BOLD, 60);
+    public static final Font TITOLO = new Font("Arial", Font.BOLD, 26);            
+    public static final Font NORMALE = new Font("Arial", Font.PLAIN, 18);          
     public static final Font BOTTONI = new Font("Arial", Font.BOLD, 20);            
-    
-    //CREA BOTTONE 
+   
+    //CREA BOTTONE
     public static JButton CreaBot(String testo) {
-        JButton b = new JButton(testo.toUpperCase()); 
+        JButton b = new JButton(testo.toUpperCase());
         b.setFont(BOTTONI);
         b.setForeground(Color.BLACK);
-        b.setBackground(ORO);       
+        b.setBackground(ORO);      
         b.setFocusPainted(false);   // rimuove bordo focus
         b.setCursor(new Cursor(Cursor.HAND_CURSOR));
         b.setContentAreaFilled(true);
@@ -54,7 +54,7 @@ public class StiliPerGioco {
     //PANNELLO TABELLONE
     public static JPanel CreazioneTab() {
         JPanel p = new JPanel();
-        p.setBackground(TABELLONE1); 
+        p.setBackground(TABELLONE1);
         p.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(Color.WHITE, 3),
                 BorderFactory.createEmptyBorder(15, 20, 15, 20)
@@ -62,10 +62,10 @@ public class StiliPerGioco {
         return p;
     }
 
-    //CREA CAMPO 
+    //CREA CAMPO
     public static JPanel CreazioneCampo() {
         JPanel p = new JPanel();
-        p.setBackground(CAMPO_VERDE); 
+        p.setBackground(CAMPO_VERDE);
         p.setBorder(new LineBorder(Color.WHITE, 4));
         return p;
     }
@@ -73,7 +73,7 @@ public class StiliPerGioco {
     //CREA FOOTER
     public static JPanel CreazioneSpeek() {
         JPanel p = new JPanel();
-        p.setBackground(VERDE); 
+        p.setBackground(VERDE);
         p.setBorder(new LineBorder(Color.WHITE, 3));
         return p;
     }
