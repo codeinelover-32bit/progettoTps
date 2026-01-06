@@ -9,21 +9,21 @@ public class GiocoClient extends JFrame {
 
     //VARIABILI
     private PrintWriter out;                
-    private JLabel stato = new JLabel("CONNETTENDO AL SERVER..."); 
-    private JLabel TabelloneLabel = new JLabel("0 - 0");           
+    private JLabel stato = new JLabel("CONNETTENDO AL SERVER...");
+    private JLabel TabelloneLabel = new JLabel("0 - 0");          
     private JLabel mossaServerLabel = new JLabel("-");            
-    private JLabel mossaClientLabel = new JLabel("-");             
-    private JLabel timerLabel = new JLabel("00");                 
-    private JButton[] bottoni = new JButton[3];                   
-    private boolean turnoClient = false;                           
-    private Timer timer;                                           
+    private JLabel mossaClientLabel = new JLabel("-");            
+    private JLabel timerLabel = new JLabel("00");                
+    private JButton[] bottoni = new JButton[3];                  
+    private boolean turnoClient = false;                          
+    private Timer timer;                                          
 
     public GiocoClient() {
         super("Sasso-Carta-Forbice - CLIENT (Stadio)");
         getContentPane().setBackground(StiliPerGioco.CAMPO_VERDE);
         setLayout(new BorderLayout(15, 15));
 
-        //Tabellone e mosse 
+        //Tabellone e mosse
         JPanel tabellone = StiliPerGioco.CreazioneTab();
         tabellone.setLayout(new GridLayout(2, 3, 20, 10));
 
@@ -108,7 +108,7 @@ public class GiocoClient extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
 
-        // Avvia thread 
+        // Avvia thread
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -153,13 +153,16 @@ public class GiocoClient extends JFrame {
                 }
             });
 
-
             while (true) {
-                String comando = in.readLine();
-                if (comando == null) break; // server chiuso
 
+                String comando = in.readLine();
+                if (comando == null) break;
                 if (comando.equals("INSERISCI_MOSSA")) {
+
                     turnoClient = true;
+                    stopTimer(); // reset timer server
+                    timerLabel.setText("00");
+
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
@@ -172,19 +175,35 @@ public class GiocoClient extends JFrame {
                             mossaClientLabel.setForeground(StiliPerGioco.TESTO);
                         }
                     });
-                    InizioTimer(10); // avvia timer 10 sec
 
-                } else if (comando.startsWith("RISULTATO:TIMEOUT")) {
+                    InizioTimer(10); // timer client
+
+                }
+                else if (comando.startsWith("RISULTATO:TIMEOUT_SERVER")) {
+
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            stato.setText("TIMEOUT! SERVER SEGNA.");
+                            mossaServerLabel.setText("TIMEOUT");
+                            stato.setText("TIMEOUT SERVER! CLIENT SEGNA!");
+                            stato.setForeground(Color.GREEN);
+                        }
+                    });
+
+                }
+                else if (comando.startsWith("RISULTATO:TIMEOUT")) {
+
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            stato.setText("TIMEOUT! SERVER SEGNA!");
                             stato.setForeground(Color.RED);
                         }
                     });
-       
-                } else if (comando.startsWith("RISULTATO:")) {
-                    // Aggiorna mosse e punteggio
+
+                }
+                else if (comando.startsWith("RISULTATO:")) {
+
                     String[] dati = comando.substring(10).split(";");
                     String mossaServer = dati[0];
                     String mossaClient = dati[1];
@@ -197,32 +216,36 @@ public class GiocoClient extends JFrame {
                         default: msg = "CLIENT SEGNA!"; break;
                     }
 
-                    SwingUtilities.invokeLater(() -> {
-                        mossaServerLabel.setText(mossaServer.toUpperCase());
-                        mossaClientLabel.setText(mossaClient.toUpperCase());
-                        stato.setText(msg);
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
 
-                        // Colori e animazione goal
-                        if (res == 1) {
-                            mossaServerLabel.setForeground(Color.GREEN);
-                            mossaClientLabel.setForeground(Color.RED);
-                            AnimazioneGoal(TabelloneLabel);
-                        } else if (res == 2) {
-                            mossaServerLabel.setForeground(Color.RED);
-                            mossaClientLabel.setForeground(Color.GREEN);
-                            AnimazioneGoal(TabelloneLabel);
-                        } else {
-                            mossaServerLabel.setForeground(Color.YELLOW);
-                            mossaClientLabel.setForeground(Color.YELLOW);
+                            mossaServerLabel.setText(mossaServer.toUpperCase());
+                            mossaClientLabel.setText(mossaClient.toUpperCase());
+                            stato.setText(msg);
+
+                            if (res == 1) {
+                                mossaServerLabel.setForeground(Color.GREEN);
+                                mossaClientLabel.setForeground(Color.RED);
+                                AnimazioneGoal(TabelloneLabel);
+
+                            } else if (res == 2) {
+                                mossaServerLabel.setForeground(Color.RED);
+                                mossaClientLabel.setForeground(Color.GREEN);
+                                AnimazioneGoal(TabelloneLabel);
+
+                            } else {
+                                mossaServerLabel.setForeground(Color.YELLOW);
+                                mossaClientLabel.setForeground(Color.YELLOW);
+                            }
                         }
                     });
 
-                    // Aggiorna punteggio
-                    String punteggio = in.readLine();
-                    if (punteggio != null && punteggio.startsWith("PUNTEGGIO:")) {
-                        String s = punteggio.substring(10).replace(";", " - ");
-                        SwingUtilities.invokeLater(() -> TabelloneLabel.setText(s));
-                    }
+                }
+                else if (comando.startsWith("PUNTEGGIO:")) {
+
+                    String s = comando.substring(10).replace(";", " - ");
+                    SwingUtilities.invokeLater(() -> TabelloneLabel.setText(s));
                 }
             }
 
@@ -236,10 +259,9 @@ public class GiocoClient extends JFrame {
             });
             e.printStackTrace();
         }
-
     }
 
-    //TIMER
+    //TIMER CLIENT
     private void InizioTimer(int secondi) {
         stopTimer();
         final int[] tempoRimanente = { secondi };
@@ -256,7 +278,7 @@ public class GiocoClient extends JFrame {
                     if (turnoClient) {
                         turnoClient = false;
                         setButtonsEnabled(false);
-                        out.println("timeout"); 
+                        out.println("timeout");
                     }
                 }
             }
@@ -264,19 +286,19 @@ public class GiocoClient extends JFrame {
         timer.start();
     }
 
-
     private void stopTimer() {
         if (timer != null) timer.stop();
         timerLabel.setText("00");
     }
 
-    // Abilita o disabilita bottoni 
-    private void setButtonsEnabled(boolean en) {
+    // Abilita o disabilita bottoni
+    private void setButtonsEnabled(final boolean en) {
+
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-
-                for (JButton b : bottoni) {
+                for (int i = 0; i < bottoni.length; i++) {
+                    JButton b = bottoni[i];
                     b.setEnabled(en);
                     if (en) {
                         b.setBackground(StiliPerGioco.ORO);
@@ -299,3 +321,4 @@ public class GiocoClient extends JFrame {
     }
 
 }
+
