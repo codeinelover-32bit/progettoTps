@@ -10,10 +10,10 @@ public class GiocoServer extends JFrame {
 
     //VARIABILI
     private PrintWriter out;    // Per inviare messaggi al client
-    private JLabel stato = new JLabel("IN ATTESA DEL CLIENT..."); 
-    private JLabel LabelTabellone = new JLabel("0 - 0");         
-    private JLabel mossaServerLabel = new JLabel("-");           
-    private JLabel mossaClientLabel = new JLabel("-");           
+    private JLabel stato = new JLabel("IN ATTESA DEL CLIENT...");
+    private JLabel LabelTabellone = new JLabel("0 - 0");        
+    private JLabel mossaServerLabel = new JLabel("-");          
+    private JLabel mossaClientLabel = new JLabel("-");          
     private JLabel timerLabel = new JLabel("00");                
     private JButton[] bottoni = new JButton[3];                  
 
@@ -92,7 +92,7 @@ public class GiocoServer extends JFrame {
         l.setHorizontalAlignment(SwingConstants.CENTER);
     }
 
-    //CAMPO 
+    //CAMPO
     private void creaCampo() {
         JPanel campo = StiliPerGioco.CreazioneCampo();
         campo.setLayout(new GridLayout(1, 3, 40, 0));
@@ -122,8 +122,8 @@ public class GiocoServer extends JFrame {
         add(pan, BorderLayout.SOUTH);
     }
 
-    // LAMPEGGIO DEL RISULTATO
-    private void AnimazioneGoal(JLabel l) {
+    // LAMPEGGIO DEL RISULTATO stessa del client
+    private void AnimazioneGoal(final JLabel l) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -139,7 +139,7 @@ public class GiocoServer extends JFrame {
         }).start();
     }
 
-    // LOGICA DEL SERVER 
+    // LOGICA DEL SERVER
     private void InizioServer() {
         try (ServerSocket serverSocket = new ServerSocket(5000)) {
 
@@ -160,29 +160,37 @@ public class GiocoServer extends JFrame {
 
                 //TURNO SERVER
                 CountDownLatch delta = new CountDownLatch(1);
-                preparaTurnoServer(delta); // abilita bottoni server
-                delta.await();              // aspetta scelta server
+                preparaTurnoServer(delta);
+                InizioTimer(10, delta); // timer server
+                delta.await(); // attende scelta o timeout
 
                 //TURNO CLIENT
-                out.println("INSERISCI_MOSSA"); 
-                InizioTimer(10);                // avvia timer turno client
-
-                String mossaClient = riceve.readLine(); 
                 stopTimer();
-                if (mossaClient == null) break;     // client disconnesso
+                timerLabel.setText("00"); // timer spento nel turno client
+                out.println("INSERISCI_MOSSA");
+
+                String mossaClient = riceve.readLine();
+                if (mossaClient == null) break; // se si dissconnette esce dal ciclo
 
                 int res;
                 String msg;
 
                 if (mossaClient.equals("timeout")) {
-                    //server segna automaticamente
                     mossaClient = "-";
                     res = 1;
                     puntiServer++;
                     msg = "TIMEOUT! SERVER SEGNA!";
                     out.println("RISULTATO:TIMEOUT;" + mossaServer + ";" + res);
+                    out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
+
+                } else if (mossaServer.equals("timeout")) {
+                    res = 2;
+                    puntiClient++;
+                    msg = "TIMEOUT SERVER! CLIENT SEGNA!";
+                    out.println("RISULTATO:TIMEOUT_SERVER;timeout;" + res);
+                    out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
+
                 } else {
-                    // Calcola vincitore
                     res = GameLogic.winner(mossaServer, mossaClient);
 
                     if (res == 1) puntiServer++;
@@ -190,17 +198,14 @@ public class GiocoServer extends JFrame {
 
                     msg = switchRes(res);
                     out.println("RISULTATO:" + mossaServer + ";" + mossaClient + ";" + res);
+                    out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
                 }
 
-                // Aggiorna gui del server e invia punteggio
                 aggiornaGraficaTurno(mossaClient, msg, res);
-                out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
-
-                Thread.sleep(2000); // pausa tra i turni
+                Thread.sleep(2000);
             }
 
         } catch (Exception e) {
-            // Se client disconnesso
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
@@ -212,8 +217,8 @@ public class GiocoServer extends JFrame {
         }
     }
 
-    //PREPARA TURNO SERVER: abilita bottoni e resetta label
-    private void preparaTurnoServer(CountDownLatch delta) {
+    //PREPARA TURNO SERVER
+    private void preparaTurnoServer(final CountDownLatch delta) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -225,12 +230,13 @@ public class GiocoServer extends JFrame {
                 mossaServerLabel.setForeground(StiliPerGioco.TESTO);
                 mossaClientLabel.setForeground(StiliPerGioco.TESTO);
 
-                SetBottoni(true, delta); 
+                mossaServer = null;
+                SetBottoni(true, delta);
             }
         });
     }
 
-    // Converte risultato in messaggio 
+    //converte il risultato in testo
     private String switchRes(int res) {
         switch (res) {
             case 0: return "PAREGGIO!";
@@ -239,8 +245,8 @@ public class GiocoServer extends JFrame {
         }
     }
 
-    // Aggiorna grafica delle mosse, punteggio e colori
-    private void aggiornaGraficaTurno(String mossaClient, String msg, int res) {
+    //aggiorna la GUI dopo il risultato
+    private void aggiornaGraficaTurno(final String mossaClient, final String msg, final int res) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -265,8 +271,8 @@ public class GiocoServer extends JFrame {
         });
     }
 
-    // TIMER TURNO SERVER E CLIENT
-    private void InizioTimer(int secondi) {
+    // TIMER SOLO PER IL SERVER
+    private void InizioTimer(int secondi, final CountDownLatch latch) {
         stopTimer();
         final int[] tempo = {secondi};
 
@@ -281,7 +287,8 @@ public class GiocoServer extends JFrame {
                 if (tempo[0] <= 0) {
                     stopTimer();
                     if (mossaServer == null) mossaServer = "timeout";
-                    SetBottoni(false, null); // disabilita bottoni fine turno
+                    SetBottoni(false, null);
+                    latch.countDown();
                 }
             }
         });
@@ -294,29 +301,37 @@ public class GiocoServer extends JFrame {
         timerLabel.setText("00");
     }
 
-    // GESTIONE BOTTONI SERVER
-    private void SetBottoni(boolean attivi, CountDownLatch latch) {
+ // GESTIONE BOTTONI SERVER
+    private void SetBottoni(final boolean attivi, final CountDownLatch effetuata) {
+
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                for (JButton but : bottoni) {
 
-                    // Rimuove vecchi listener
-                    for (ActionListener listener : but.getActionListeners())
-                        but.removeActionListener(listener);
+                for (int i = 0; i < bottoni.length; i++) {
 
+                    final JButton but = bottoni[i];
+                    ActionListener[] listeners = but.getActionListeners();
+                    for (int j = 0; j < listeners.length; j++) {
+                        but.removeActionListener(listeners[j]);
+                    }
                     but.setEnabled(attivi);
-                    but.setBackground(attivi ? StiliPerGioco.ORO : Color.DARK_GRAY);
+                    if (attivi) {
+                        but.setBackground(StiliPerGioco.ORO);
+                    } else {
+                        but.setBackground(Color.DARK_GRAY);
+                    }
+                    if (attivi && effetuata != null) {
 
-                    // Collega listener per registrare mossa e sbloccare latch
-                    if (attivi && latch != null) {
                         but.addActionListener(new ActionListener() {
                             @Override
                             public void actionPerformed(ActionEvent e) {
+
                                 mossaServer = but.getText().toLowerCase();
                                 mossaServerLabel.setText(mossaServer.toUpperCase());
-                                SetBottoni(false, null); // disabilita bottoni dopo scelta
-                                latch.countDown();       // segnala fine turno
+
+                                SetBottoni(false, null);
+                                effetuata.countDown();      
                             }
                         });
                     }
@@ -335,3 +350,4 @@ public class GiocoServer extends JFrame {
         });
     }
 }
+
