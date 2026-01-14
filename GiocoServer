@@ -8,346 +8,358 @@ import javax.swing.*;
 
 public class GiocoServer extends JFrame {
 
-    //VARIABILI
-    private PrintWriter out;    // Per inviare messaggi al client
-    private JLabel stato = new JLabel("IN ATTESA DEL CLIENT...");
-    private JLabel LabelTabellone = new JLabel("0 - 0");        
-    private JLabel mossaServerLabel = new JLabel("-");          
-    private JLabel mossaClientLabel = new JLabel("-");          
-    private JLabel timerLabel = new JLabel("00");                
-    private JButton[] bottoni = new JButton[3];                  
+//VARIABILI
+private PrintWriter out; // Per inviare messaggi al client
+private JLabel stato = new JLabel("IN ATTESA DEL CLIENT...");
+private JLabel LabelTabellone = new JLabel("0 - 0");
+private JLabel mossaServerLabel = new JLabel("-");
+private JLabel mossaClientLabel = new JLabel("-");
+private JLabel timerLabel = new JLabel("00");
+private JButton[] bottoni = new JButton[3];
 
-    private int puntiServer = 0;  
-    private int puntiClient = 0;  
-    private String mossaServer = null;
-    private Timer timer;                
+private int puntiServer = 0;
+private int puntiClient = 0;
+private String mossaServer = null;
+private Timer timer;
 
-    // COSTRUTTORE
-    public GiocoServer() {
-        super("Sasso-Carta-Forbice - SERVER (Stadio)");
-        setLayout(new BorderLayout(15, 15));
-        getContentPane().setBackground(StiliPerGioco.CAMPO_VERDE);
+// COSTRUTTORE
+public GiocoServer() {
+super("Sasso-Carta-Forbice - SERVER (Stadio)");
+setLayout(new BorderLayout(15, 15));
+getContentPane().setBackground(StiliPerGioco.CAMPO_VERDE);
 
-        // Crea tabellone, campo bottoni e footer
-        creaTabellone();
-        creaCampo();
-        creaFooter();
+// Crea tabellone, campo bottoni e footer
+creaTabellone();
+creaCampo();
+creaFooter();
 
-        // Finestra principale
-        setSize(900, 550);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setVisible(true);
+// Finestra principale
+setSize(900, 550);
+setLocationRelativeTo(null);
+setDefaultCloseOperation(EXIT_ON_CLOSE);
+setVisible(true);
 
-        // Avvia thread principale del server
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                InizioServer();
-            }
-        }).start();
-    }
-
-    // HEADER e TABELLONE
-    private void creaTabellone() {
-        JPanel tabellone = StiliPerGioco.CreazioneTab();
-        tabellone.setLayout(new GridLayout(2, 3, 20, 10));
-
-        JLabel LabelServer = new JLabel("SERVER", SwingConstants.CENTER);
-        LabelServer.setForeground(StiliPerGioco.COLORE_CASA);
-        LabelServer.setFont(StiliPerGioco.TITOLO);
-
-        JLabel LabelClient = new JLabel("CLIENT", SwingConstants.CENTER);
-        LabelClient.setForeground(StiliPerGioco.COLORRE_TRANSF);
-        LabelClient.setFont(StiliPerGioco.TITOLO);
-
-        // Tabellone centrale con punteggio
-        LabelTabellone.setFont(StiliPerGioco.FONT_TABELLONE);
-        LabelTabellone.setForeground(StiliPerGioco.TESTO);
-        LabelTabellone.setHorizontalAlignment(SwingConstants.CENTER);
-
-        // Stile etichette mosse
-        preparaLabel(mossaServerLabel);
-        preparaLabel(mossaClientLabel);
-
-        // Timer stile
-        timerLabel.setFont(StiliPerGioco.TITOLO);
-        timerLabel.setForeground(Color.ORANGE);
-        timerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
-        // Aggiungi componenti al tabellone
-        tabellone.add(LabelServer);
-        tabellone.add(LabelTabellone);
-        tabellone.add(LabelClient);
-        tabellone.add(mossaServerLabel);
-        tabellone.add(timerLabel);
-        tabellone.add(mossaClientLabel);
-
-        add(tabellone, BorderLayout.NORTH);
-    }
-
-    private void preparaLabel(JLabel l) {
-        l.setFont(StiliPerGioco.NORMALE);
-        l.setForeground(StiliPerGioco.TESTO);
-        l.setHorizontalAlignment(SwingConstants.CENTER);
-    }
-
-    //CAMPO
-    private void creaCampo() {
-        JPanel campo = StiliPerGioco.CreazioneCampo();
-        campo.setLayout(new GridLayout(1, 3, 40, 0));
-
-        String[] mosse = {"Sasso", "Carta", "Forbice"};
-
-        for (int i = 0; i < 3; i++) {
-            JButton b = StiliPerGioco.CreaBot(mosse[i]);
-            b.setEnabled(false); // inizialmente disabilitati
-            bottoni[i] = b;
-            campo.add(b);
-        }
-
-        add(campo, BorderLayout.CENTER);
-    }
-
-    //MESSAGGI NELLO SPAZIO VERDE SCURO
-    private void creaFooter() {
-        stato.setHorizontalAlignment(SwingConstants.CENTER);
-        stato.setFont(StiliPerGioco.TITOLO);
-        stato.setForeground(StiliPerGioco.TESTO);
-
-        JPanel pan = StiliPerGioco.CreazioneSpeek();
-        pan.setLayout(new BorderLayout());
-        pan.add(stato, BorderLayout.CENTER);
-
-        add(pan, BorderLayout.SOUTH);
-    }
-
-    // LAMPEGGIO DEL RISULTATO stessa del client
-    private void AnimazioneGoal(final JLabel l) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    for (int i = 0; i < 4; i++) {
-                        l.setForeground(Color.YELLOW);
-                        Thread.sleep(150);
-                        l.setForeground(StiliPerGioco.TESTO);
-                        Thread.sleep(150);
-                    }
-                } catch (Exception ignored) {}
-            }
-        }).start();
-    }
-
-    // LOGICA DEL SERVER
-    private void InizioServer() {
-        try (ServerSocket serverSocket = new ServerSocket(5000)) {
-
-            Socket clientSocket = serverSocket.accept(); // aspetta connessione client
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            BufferedReader riceve = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-
-            // Messaggio: client connesso
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    stato.setText("CLIENT CONNESSO! CALCIO D’INIZIO…");
-                    stato.setForeground(StiliPerGioco.COLORE_CASA);
-                }
-            });
-
-            while (true) {
-
-                //TURNO SERVER
-                CountDownLatch delta = new CountDownLatch(1);
-                preparaTurnoServer(delta);
-                InizioTimer(10, delta); // timer server
-                delta.await(); // attende scelta o timeout
-
-                //TURNO CLIENT
-                stopTimer();
-                timerLabel.setText("00"); // timer spento nel turno client
-                out.println("INSERISCI_MOSSA");
-
-                String mossaClient = riceve.readLine();
-                if (mossaClient == null) break; // se si dissconnette esce dal ciclo
-
-                int res;
-                String msg;
-
-                if (mossaClient.equals("timeout")) {
-                    mossaClient = "-";
-                    res = 1;
-                    puntiServer++;
-                    msg = "TIMEOUT! SERVER SEGNA!";
-                    out.println("RISULTATO:TIMEOUT;" + mossaServer + ";" + res);
-                    out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
-
-                } else if (mossaServer.equals("timeout")) {
-                    res = 2;
-                    puntiClient++;
-                    msg = "TIMEOUT SERVER! CLIENT SEGNA!";
-                    out.println("RISULTATO:TIMEOUT_SERVER;timeout;" + res);
-                    out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
-
-                } else {
-                    res = GameLogic.winner(mossaServer, mossaClient);
-
-                    if (res == 1) puntiServer++;
-                    else if (res == 2) puntiClient++;
-
-                    msg = switchRes(res);
-                    out.println("RISULTATO:" + mossaServer + ";" + mossaClient + ";" + res);
-                    out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
-                }
-
-                aggiornaGraficaTurno(mossaClient, msg, res);
-                Thread.sleep(2000);
-            }
-
-        } catch (Exception e) {
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    stato.setText("CLIENT DISCONNESSO. PARTITA TERMINATA.");
-                    stato.setForeground(Color.RED);
-                }
-            });
-            e.printStackTrace();
-        }
-    }
-
-    //PREPARA TURNO SERVER
-    private void preparaTurnoServer(final CountDownLatch delta) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                stato.setText("TURNO SERVER: SCEGLI LA MOSSA!");
-                stato.setForeground(StiliPerGioco.COLORE_CASA);
-
-                mossaClientLabel.setText("-");
-                mossaServerLabel.setText("-");
-                mossaServerLabel.setForeground(StiliPerGioco.TESTO);
-                mossaClientLabel.setForeground(StiliPerGioco.TESTO);
-
-                mossaServer = null;
-                SetBottoni(true, delta);
-            }
-        });
-    }
-
-    //converte il risultato in testo
-    private String switchRes(int res) {
-        switch (res) {
-            case 0: return "PAREGGIO!";
-            case 1: return "SERVER SEGNA!";
-            default: return "CLIENT SEGNA!";
-        }
-    }
-
-    //aggiorna la GUI dopo il risultato
-    private void aggiornaGraficaTurno(final String mossaClient, final String msg, final int res) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                LabelTabellone.setText(puntiServer + " - " + puntiClient);
-                mossaServerLabel.setText(mossaServer.toUpperCase());
-                mossaClientLabel.setText(mossaClient.toUpperCase());
-                stato.setText(msg);
-
-                if (res == 1) {
-                    mossaServerLabel.setForeground(Color.GREEN);
-                    mossaClientLabel.setForeground(Color.RED);
-                    AnimazioneGoal(LabelTabellone);
-                } else if (res == 2) {
-                    mossaServerLabel.setForeground(Color.RED);
-                    mossaClientLabel.setForeground(Color.GREEN);
-                    AnimazioneGoal(LabelTabellone);
-                } else {
-                    mossaServerLabel.setForeground(Color.YELLOW);
-                    mossaClientLabel.setForeground(Color.YELLOW);
-                }
-            }
-        });
-    }
-
-    // TIMER SOLO PER IL SERVER
-    private void InizioTimer(int secondi, final CountDownLatch latch) {
-        stopTimer();
-        final int[] tempo = {secondi};
-
-        timerLabel.setText(String.valueOf(tempo[0]));
-
-        timer = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                tempo[0]--;
-                timerLabel.setText(String.valueOf(tempo[0]));
-
-                if (tempo[0] <= 0) {
-                    stopTimer();
-                    if (mossaServer == null) mossaServer = "timeout";
-                    SetBottoni(false, null);
-                    latch.countDown();
-                }
-            }
-        });
-
-        timer.start();
-    }
-
-    private void stopTimer() {
-        if (timer != null) timer.stop();
-        timerLabel.setText("00");
-    }
-
- // GESTIONE BOTTONI SERVER
-    private void SetBottoni(final boolean attivi, final CountDownLatch effetuata) {
-
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-
-                for (int i = 0; i < bottoni.length; i++) {
-
-                    final JButton but = bottoni[i];
-                    ActionListener[] listeners = but.getActionListeners();
-                    for (int j = 0; j < listeners.length; j++) {
-                        but.removeActionListener(listeners[j]);
-                    }
-                    but.setEnabled(attivi);
-                    if (attivi) {
-                        but.setBackground(StiliPerGioco.ORO);
-                    } else {
-                        but.setBackground(Color.DARK_GRAY);
-                    }
-                    if (attivi && effetuata != null) {
-
-                        but.addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-
-                                mossaServer = but.getText().toLowerCase();
-                                mossaServerLabel.setText(mossaServer.toUpperCase());
-
-                                SetBottoni(false, null);
-                                effetuata.countDown();      
-                            }
-                        });
-                    }
-                }
-            }
-        });
-    }
-
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new GiocoServer();
-            }
-        });
-    }
+// Avvia thread principale del server
+new Thread(new Runnable() {
+@Override
+public void run() {
+InizioServer();
+}
+}).start();
 }
 
+// HEADER e TABELLONE
+private void creaTabellone() {
+JPanel tabellone = StiliPerGioco.CreazioneTab();
+tabellone.setLayout(new GridLayout(2, 3, 20, 10));
+
+JLabel LabelServer = new JLabel("SERVER", SwingConstants.CENTER);
+LabelServer.setForeground(StiliPerGioco.COLORE_CASA);
+LabelServer.setFont(StiliPerGioco.TITOLO);
+
+JLabel LabelClient = new JLabel("CLIENT", SwingConstants.CENTER);
+LabelClient.setForeground(StiliPerGioco.COLORRE_TRANSF);
+LabelClient.setFont(StiliPerGioco.TITOLO);
+
+// Tabellone centrale con punteggio
+LabelTabellone.setFont(StiliPerGioco.FONT_TABELLONE);
+LabelTabellone.setForeground(StiliPerGioco.TESTO);
+LabelTabellone.setHorizontalAlignment(SwingConstants.CENTER);
+
+// Stile etichette mosse
+preparaLabel(mossaServerLabel);
+preparaLabel(mossaClientLabel);
+
+// Timer stile
+timerLabel.setFont(StiliPerGioco.TITOLO);
+timerLabel.setForeground(Color.ORANGE);
+timerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+// Aggiungi componenti al tabellone
+tabellone.add(LabelServer);
+tabellone.add(LabelTabellone);
+tabellone.add(LabelClient);
+tabellone.add(mossaServerLabel);
+tabellone.add(timerLabel);
+tabellone.add(mossaClientLabel);
+
+add(tabellone, BorderLayout.NORTH);
+}
+
+private void preparaLabel(JLabel l) {
+l.setFont(StiliPerGioco.NORMALE);
+l.setForeground(StiliPerGioco.TESTO);
+l.setHorizontalAlignment(SwingConstants.CENTER);
+}
+
+//CAMPO
+private void creaCampo() {
+JPanel campo = StiliPerGioco.CreazioneCampo();
+campo.setLayout(new GridLayout(1, 3, 40, 0));
+
+String[] mosse = {"Sasso", "Carta", "Forbice"};
+
+for (int i = 0; i < 3; i++) {
+JButton b = StiliPerGioco.CreaBot(mosse[i]);
+b.setEnabled(false); // inizialmente disabilitati
+bottoni[i] = b;
+campo.add(b);
+}
+
+add(campo, BorderLayout.CENTER);
+}
+
+//MESSAGGI NELLO SPAZIO VERDE SCURO
+private void creaFooter() {
+stato.setHorizontalAlignment(SwingConstants.CENTER);
+stato.setFont(StiliPerGioco.TITOLO);
+stato.setForeground(StiliPerGioco.TESTO);
+
+JPanel pan = StiliPerGioco.CreazioneSpeek();
+pan.setLayout(new BorderLayout());
+pan.add(stato, BorderLayout.CENTER);
+
+add(pan, BorderLayout.SOUTH);
+}
+
+// LAMPEGGIO DEL RISULTATO stessa del client
+private void AnimazioneGoal(final JLabel l) {
+new Thread(new Runnable() {
+@Override
+public void run() {
+try {
+for (int i = 0; i < 4; i++) {
+l.setForeground(Color.YELLOW);
+Thread.sleep(150);
+l.setForeground(StiliPerGioco.TESTO);
+Thread.sleep(150);
+}
+} catch (Exception ignored) {}
+}
+}).start();
+}
+
+// LOGICA DEL SERVER
+private void InizioServer() {
+try (ServerSocket serverSocket = new ServerSocket(5000);
+Socket clientSocket = serverSocket.accept();
+PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+BufferedReader riceve = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))) {
+
+this.out = out;
+
+// Messaggio: client connesso
+SwingUtilities.invokeLater(new Runnable() {
+@Override
+public void run() {
+stato.setText("CLIENT CONNESSO! CALCIO D’INIZIO…");
+stato.setForeground(StiliPerGioco.COLORE_CASA);
+}
+});
+
+while (true) {
+
+//TURNO SERVER
+CountDownLatch delta = new CountDownLatch(1);
+preparaTurnoServer(delta);
+InizioTimer(10, delta); // timer server
+delta.await(); // attende scelta o timeout
+
+//TURNO CLIENT
+stopTimer();
+timerLabel.setText("00"); // timer spento nel turno client
+out.println("INSERISCI_MOSSA");
+
+String mossaClient = riceve.readLine();
+if (mossaClient == null) break; // se si dissconnette esce dal ciclo
+
+int res;
+String msg;
+
+// NUOVO CASO: entrambi timeout
+if (mossaClient.equals("timeout") && mossaServer.equals("timeout")) {
+res = 0;
+msg = "ENTRAMBI IN TIMEOUT! NESSUN PUNTO.";
+out.println("RISULTATO:TIMEOUT_ENTRAMBI;timeout;0");
+out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
+}
+
+// timeout solo client
+else if (mossaClient.equals("timeout")) {
+mossaClient = "-";
+res = 1;
+puntiServer++;
+msg = "TIMEOUT! SERVER SEGNA!";
+out.println("RISULTATO:TIMEOUT;" + mossaServer + ";" + res);
+out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
+}
+
+// timeout solo server
+else if (mossaServer.equals("timeout")) {
+res = 2;
+puntiClient++;
+msg = "TIMEOUT SERVER! CLIENT SEGNA!";
+out.println("RISULTATO:TIMEOUT_SERVER;timeout;" + res);
+out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
+}
+
+// nessun timeout
+else {
+res = GameLogic.winner(mossaServer, mossaClient);
+
+if (res == 1) puntiServer++;
+else if (res == 2) puntiClient++;
+
+msg = switchRes(res);
+out.println("RISULTATO:" + mossaServer + ";" + mossaClient + ";" + res);
+out.println("PUNTEGGIO:" + puntiServer + ";" + puntiClient);
+}
+
+aggiornaGraficaTurno(mossaClient, msg, res);
+Thread.sleep(2000);
+}
+
+} catch (Exception e) {
+SwingUtilities.invokeLater(new Runnable() {
+@Override
+public void run() {
+stato.setText("CLIENT DISCONNESSO. PARTITA TERMINATA.");
+stato.setForeground(Color.RED);
+}
+});
+e.printStackTrace();
+}
+}
+
+//PREPARA TURNO SERVER
+private void preparaTurnoServer(final CountDownLatch delta) {
+SwingUtilities.invokeLater(new Runnable() {
+@Override
+public void run() {
+stato.setText("TURNO SERVER: SCEGLI LA MOSSA!");
+stato.setForeground(StiliPerGioco.COLORE_CASA);
+
+mossaClientLabel.setText("-");
+mossaServerLabel.setText("-");
+mossaServerLabel.setForeground(StiliPerGioco.TESTO);
+mossaClientLabel.setForeground(StiliPerGioco.TESTO);
+
+mossaServer = null;
+SetBottoni(true, delta);
+}
+});
+}
+
+//converte il risultato in testo
+private String switchRes(int res) {
+switch (res) {
+case 0: return "PAREGGIO!";
+case 1: return "SERVER SEGNA!";
+default: return "CLIENT SEGNA!";
+}
+}
+
+//aggiorna la GUI dopo il risultato
+private void aggiornaGraficaTurno(final String mossaClient, final String msg, final int res) {
+SwingUtilities.invokeLater(new Runnable() {
+@Override
+public void run() {
+LabelTabellone.setText(puntiServer + " - " + puntiClient);
+mossaServerLabel.setText(mossaServer.toUpperCase());
+mossaClientLabel.setText(mossaClient.toUpperCase());
+stato.setText(msg);
+
+if (res == 1) {
+mossaServerLabel.setForeground(Color.GREEN);
+mossaClientLabel.setForeground(Color.RED);
+AnimazioneGoal(LabelTabellone);
+} else if (res == 2) {
+mossaServerLabel.setForeground(Color.RED);
+mossaClientLabel.setForeground(Color.GREEN);
+AnimazioneGoal(LabelTabellone);
+} else {
+mossaServerLabel.setForeground(Color.YELLOW);
+mossaClientLabel.setForeground(Color.YELLOW);
+}
+}
+});
+}
+
+// TIMER SOLO PER IL SERVER
+private void InizioTimer(int secondi, final CountDownLatch latch) {
+stopTimer();
+final int[] tempo = {secondi};
+
+timerLabel.setText(String.valueOf(tempo[0]));
+
+timer = new Timer(1000, new ActionListener() {
+@Override
+public void actionPerformed(ActionEvent e) {
+tempo[0]--;
+timerLabel.setText(String.valueOf(tempo[0]));
+
+if (tempo[0] <= 0) {
+stopTimer();
+if (mossaServer == null) mossaServer = "timeout";
+SetBottoni(false, null);
+latch.countDown();
+}
+}
+});
+
+timer.start();
+}
+
+private void stopTimer() {
+if (timer != null) timer.stop();
+timerLabel.setText("00");
+}
+
+// GESTIONE BOTTONI SERVER
+private void SetBottoni(final boolean attivi, final CountDownLatch effetuata) {
+
+SwingUtilities.invokeLater(new Runnable() {
+@Override
+public void run() {
+
+for (int i = 0; i < bottoni.length; i++) {
+
+final JButton but = bottoni[i];
+ActionListener[] listeners = but.getActionListeners();
+for (int j = 0; j < listeners.length; j++) {
+but.removeActionListener(listeners[j]);
+}
+but.setEnabled(attivi);
+if (attivi) {
+but.setBackground(StiliPerGioco.ORO);
+} else {
+but.setBackground(Color.DARK_GRAY);
+}
+if (attivi && effetuata != null) {
+
+but.addActionListener(new ActionListener() {
+@Override
+public void actionPerformed(ActionEvent e) {
+
+mossaServer = but.getText().toLowerCase();
+mossaServerLabel.setText(mossaServer.toUpperCase());
+
+SetBottoni(false, null);
+effetuata.countDown();
+}
+});
+}
+}
+}
+});
+}
+
+public static void main(String[] args) {
+SwingUtilities.invokeLater(new Runnable() {
+@Override
+public void run() {
+new GiocoServer();
+}
+});
+}
+}
